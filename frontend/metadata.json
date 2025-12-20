@@ -1,0 +1,7 @@
+{
+  "name": "Project Hayat - Intel Platform",
+  "description": "A tactical mission control dashboard for earthquake rescue operations powered by AI vision and audio detection.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
