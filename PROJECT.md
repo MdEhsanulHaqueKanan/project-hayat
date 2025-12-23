@@ -10,21 +10,29 @@
 
 ---
 
-## 🎧 Phase 2: The "Listener" (Audio Intelligence)
-**Objective:** Isolate human speech from high-noise drone environments.
-**Hardware Required:** Desktop PC (RTX 3050).
-- [ ] **Research:** Investigate "Rotors-informed Wave-U-Net" for noise cancellation.
-- [ ] **Data:** Acquire ESC-50 (Environmental Sound Classification) dataset.
-- [ ] **Model:** Train a Denoising Autoencoder to filter drone propeller frequencies.
-- [ ] **Integration:** Add audio waveform visualization to the Dashboard.
+## 🎧 Phase 2: The "Listener" (Audio Intelligence) (COMPLETED)
+**Objective:** Enable the system to detect human distress signals (screams) in high-noise environments.
+**Hardware Used:** Desktop PC (NVIDIA RTX 3050).
+- [x] **Hardware Setup:** Configured PyTorch with CUDA 11.8 for GPU acceleration.
+- [x] **Data Pipeline:** Processed "Human Screaming Detection Dataset" (Spectrogram Conversion via Librosa).
+- [x] **AI Model:** Trained ResNet18 on Mel-Spectrograms to distinguish 'Scream' vs 'Background Noise' (Accuracy: 93.9%).
+- [x] **Multimodal API:** Upgraded FastAPI to handle both Image and Audio streams.
+- [x] **UI Integration:** Added Audio Visualizer and "Cyan Alert" system for biological detection.
 
 ---
 
-## 🌍 Phase 3: "Ghost Protocol" (Deployment & Optimization)
+## 🌍 Phase 3: "The Navigator" (Geospatial Intelligence) (NEXT UP)
+**Objective:** Replace static grids with real-time satellite mapping for tactical routing.
+- [ ] **Mapping Engine:** Integrate `react-leaflet` with "Dark Matter" tactical tiles.
+- [ ] **Dynamic Pinning:** Plot AI detections (Red/Cyan) on real GPS coordinates in Antakya, Turkey.
+- [ ] **Routing:** Draw safe paths around 'Red' zones.
+
+---
+
+## 🚀 Phase 4: "Ghost Protocol" (Deployment)
 **Objective:** Optimize for edge deployment in low-bandwidth disaster zones.
 - [ ] **Docker:** Containerize the Backend and Frontend for one-click deployment.
-- [ ] **Edge Optimization:** Quantize YOLOv8 model (Float32 -> Int8) to run on Raspberry Pi/Jetson Nano.
-- [ ] **Mapping:** Replace static background with offline Leaflet maps (OpenStreetMap).
+- [ ] **Edge Optimization:** Quantize models to run on NVIDIA Jetson / Raspberry Pi.
 
 ---
 
