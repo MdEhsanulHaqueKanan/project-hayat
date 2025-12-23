@@ -4,8 +4,13 @@ __pycache__/
 venv/
 .env
 
-# Model weights (Optional: Keep this commented out if you WANT to upload the model)
-# backend/models/*.pt
+# DATASETS (Crucial - Do not upload these)
+backend/data/
+backend/data_spectrograms/
+
+# AI MODELS (Too large for standard GitHub)
+backend/models/*.pt
+backend/runs/
 
 # Node/React
 node_modules/
@@ -16,3 +21,4 @@ frontend/node_modules/
 
 # VS Code
 .vscode/
+.idea/
