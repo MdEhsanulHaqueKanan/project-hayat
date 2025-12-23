@@ -3,7 +3,6 @@ import axios from 'axios';
 import { 
   ShieldAlert, 
   Wifi, 
-  Map as MapIcon, 
   Crosshair, 
   Zap, 
   Activity, 
@@ -12,13 +11,12 @@ import {
   RefreshCw,
   Loader2,
   Upload,
-  Camera,
-  Mic,
-  FileAudio
+  Mic
 } from 'lucide-react';
 import { MOCK_DETECTIONS, getIconForType } from './constants';
 import { Priority, Detection, RescuePlan } from './types';
 import { generateRescuePlan } from './services/geminiService';
+import { MapBackground } from './MapBackground';
 
 const App: React.FC = () => {
   // --- STATE ---
@@ -70,8 +68,12 @@ const App: React.FC = () => {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      const data = response.data; // { type: "AUDIO", prediction: "SCREAM", confidence: "99%" }
+      const data = response.data; 
       
+      // Jitter coordinates slightly so markers don't overlap perfectly
+      const jitterLat = (Math.random() - 0.5) * 0.005;
+      const jitterLng = (Math.random() - 0.5) * 0.005;
+
       // LOGIC: Create specific detection cards based on result
       let newDetection: Detection | null = null;
 
@@ -83,7 +85,7 @@ const App: React.FC = () => {
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           priority: data.prediction === 'DAMAGED' ? Priority.CRITICAL : Priority.LOW,
           confidence: parseFloat(data.confidence) / 100,
-          coordinates: { lat: 36.2023, lng: 36.1601 }
+          coordinates: { lat: 36.2023 + jitterLat, lng: 36.1601 + jitterLng }
         };
       } else if (data.type === 'AUDIO') {
         newDetection = {
@@ -91,9 +93,9 @@ const App: React.FC = () => {
           type: 'Voice',
           description: data.prediction === 'SCREAM' ? 'HUMAN DISTRESS SIGNAL DETECTED' : 'BACKGROUND NOISE FILTERED',
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          priority: data.prediction === 'SCREAM' ? Priority.HIGH : Priority.LOW, // Screams are High Priority
+          priority: data.prediction === 'SCREAM' ? Priority.HIGH : Priority.LOW,
           confidence: parseFloat(data.confidence) / 100,
-          coordinates: { lat: 36.2025, lng: 36.1605 }
+          coordinates: { lat: 36.2025 + jitterLat, lng: 36.1605 + jitterLng }
         };
       }
 
@@ -139,8 +141,8 @@ const App: React.FC = () => {
 
       <main className="flex-1 flex overflow-hidden">
         
-        {/* LEFT SIDEBAR */}
-        <aside className="w-80 border-r border-slate-800 flex flex-col bg-slate-900/50">
+        {/* LEFT SIDEBAR - DETECTION FEED */}
+        <aside className="w-80 border-r border-slate-800 flex flex-col bg-slate-900/80 backdrop-blur-sm z-20">
           <div className="p-4 border-b border-slate-800 flex items-center justify-between">
             <h2 className="text-xs font-bold tracking-[0.2em] text-slate-500 uppercase flex items-center gap-2">
               <Activity size={14} className="text-cyan-400" />
@@ -153,7 +155,7 @@ const App: React.FC = () => {
             {detections.map((det) => (
               <div 
                 key={det.id} 
-                className={`group relative bg-slate-800/30 border p-3 rounded-sm transition-all overflow-hidden
+                className={`group relative bg-slate-800/80 border p-3 rounded-sm transition-all overflow-hidden
                   ${det.id === detections[0].id ? 'animate-in slide-in-from-left duration-500 border-l-4 border-l-emerald-500' : 'border-slate-800 hover:border-slate-600'}
                 `}
               >
@@ -191,61 +193,71 @@ const App: React.FC = () => {
           </div>
         </aside>
 
-        {/* CENTER VISUALIZER */}
-        <section className="flex-1 relative bg-[#020617] overflow-hidden group flex flex-col items-center justify-center">
+        {/* --- CENTER SECTION: MAP & VISUALIZER --- */}
+        <section className="flex-1 relative overflow-hidden flex flex-col items-center justify-center">
           
-          {/* Grid Background */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:40px_40px] opacity-20 pointer-events-none" />
+          {/* 1. THE MAP (Background Layer) */}
+          <MapBackground detections={detections} />
 
-          {/* MAIN DISPLAY */}
-          <div className="relative w-full h-full flex items-center justify-center p-10">
+          {/* 2. GRID OVERLAY (Low opacity for texture) */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:40px_40px] opacity-10 pointer-events-none z-0" />
+
+          {/* 3. MAIN INTERFACE (Floating above map) */}
+          <div className="relative w-full h-full flex items-center justify-center p-10 z-10 pointer-events-none">
             
-            {/* 1. VISUAL MODE (Image) */}
+            {/* VISUAL MODE - Floating Image */}
             {mediaType === 'image' && preview && (
-              <div className="relative w-full h-full max-w-4xl border-2 border-slate-700/50 rounded-lg overflow-hidden bg-black/50 backdrop-blur-sm">
+              <div className="pointer-events-auto relative w-full h-full max-w-4xl border-2 border-slate-700/50 rounded-lg overflow-hidden bg-black/80 backdrop-blur-sm shadow-2xl">
                 <img src={preview} alt="Drone Feed" className="w-full h-full object-contain" />
                 <div className="absolute top-4 left-4 text-cyan-500/50"><Crosshair /></div>
                 <div className="absolute top-4 right-4 text-cyan-500/50"><Crosshair /></div>
                 <div className="absolute bottom-4 left-4 text-cyan-500/50"><Crosshair /></div>
                 <div className="absolute bottom-4 right-4 text-cyan-500/50"><Crosshair /></div>
+                
+                {/* Close Button */}
+                <button onClick={() => setMediaType(null)} className="absolute top-2 right-2 text-slate-400 hover:text-white bg-slate-900/50 p-1 rounded">X</button>
               </div>
             )}
 
-            {/* 2. AUDIO MODE (Waveform Visualization Placeholder) */}
+            {/* AUDIO MODE - Floating Visualizer */}
             {mediaType === 'audio' && (
-              <div className="relative w-full h-full max-w-2xl border-2 border-cyan-500/30 rounded-lg overflow-hidden bg-slate-900/80 backdrop-blur-sm flex flex-col items-center justify-center p-10">
+              <div className="pointer-events-auto relative w-full h-full max-w-2xl border-2 border-cyan-500/30 rounded-lg overflow-hidden bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center p-10 shadow-[0_0_50px_rgba(6,182,212,0.15)]">
                 <div className="w-32 h-32 rounded-full bg-cyan-500/10 flex items-center justify-center mb-6 animate-pulse">
                    <Mic size={48} className="text-cyan-400" />
                 </div>
                 <h2 className="text-xl font-bold text-cyan-400 tracking-widest mb-2">AUDIO SPECTRUM ANALYSIS</h2>
                 <p className="text-xs text-slate-500 uppercase tracking-widest">Processing Frequency Bands...</p>
+                
                 <div className="mt-8 flex items-end gap-1 h-16">
                   {[...Array(20)].map((_, i) => (
                     <div key={i} className="w-2 bg-cyan-500/50 animate-[bounce_1s_infinite]" style={{ height: `${Math.random() * 100}%`, animationDelay: `${i * 0.05}s` }} />
                   ))}
                 </div>
+
+                {/* Close Button */}
+                <button onClick={() => setMediaType(null)} className="absolute top-4 right-4 text-slate-400 hover:text-white">CLOSE</button>
               </div>
             )}
 
-            {/* 3. UPLOAD PROMPT (Default) */}
+            {/* DEFAULT STATE: Floating Upload Button */}
             {!mediaType && (
               <div 
                 onClick={() => fileInputRef.current?.click()}
-                className="group cursor-pointer w-96 h-64 border-2 border-dashed border-slate-700 rounded-lg flex flex-col items-center justify-center bg-slate-900/50 hover:bg-slate-800/50 hover:border-cyan-500/50 transition-all"
+                className="pointer-events-auto group cursor-pointer w-96 h-64 border-2 border-dashed border-slate-600/50 rounded-lg flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-md hover:bg-slate-800/90 hover:border-cyan-500/50 transition-all shadow-2xl hover:shadow-[0_0_30px_rgba(6,182,212,0.2)]"
               >
                 <div className="p-4 rounded-full bg-slate-800 group-hover:bg-cyan-500/20 mb-4 transition-all">
                   <Upload className="text-slate-400 group-hover:text-cyan-400" size={32} />
                 </div>
                 <h3 className="text-slate-300 font-bold tracking-widest mb-2">UPLOAD SENSOR DATA</h3>
-                <p className="text-slate-600 text-xs uppercase text-center">
-                  Supports: Drone Imagery (.jpg) <br/> & Audio Telemetry (.wav)
+                <p className="text-slate-500 text-xs uppercase text-center">
+                  Map Overlay Active <br/> Awaiting Input
                 </p>
               </div>
             )}
 
             {/* AI LOADING OVERLAY */}
             {isAnalyzing && (
-                <div className="absolute inset-0 bg-slate-950/80 z-50 flex items-center justify-center backdrop-blur-sm">
+                <div className="absolute inset-0 bg-slate-950/80 z-50 flex items-center justify-center backdrop-blur-sm pointer-events-auto">
                   <div className="text-emerald-500 font-bold tracking-widest text-xl flex flex-col items-center">
                     <Loader2 size={48} className="animate-spin mb-4" />
                     ANALYZING SENSOR STREAM...
@@ -254,31 +266,17 @@ const App: React.FC = () => {
             )}
           </div>
           
-          {/* HIDDEN INPUT (Accepts both Image and Audio) */}
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleFileSelect} 
-            className="hidden" 
-            accept="image/*,audio/*"
-          />
+          <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" accept="image/*,audio/*"/>
 
           {/* HUD FOOTER */}
-          <div className="absolute bottom-0 w-full p-6 flex justify-between items-end pointer-events-none">
-             <div className="text-xs font-bold text-slate-500">
-               SYSTEM READY
-             </div>
-             <div className="text-right">
-                  <div className="text-xs font-bold text-slate-400 flex items-center gap-2 justify-end">
-                    <Cpu size={14} /> NEURAL ENGINE ACTIVE
-                  </div>
-                  <div className="text-[10px] text-slate-600">RTX-3050 | CUDA ENABLED</div>
-             </div>
+          <div className="absolute bottom-0 w-full p-6 flex justify-between items-end pointer-events-none z-20">
+             <div className="text-xs font-bold text-slate-300 bg-slate-900/80 backdrop-blur px-3 py-1 rounded border border-slate-700">SYSTEM READY</div>
+             <div className="text-right text-xs text-slate-400 bg-slate-900/80 backdrop-blur px-3 py-1 rounded border border-slate-700">LAT: 36.2023 | LNG: 36.1601</div>
           </div>
         </section>
 
-        {/* RIGHT SIDEBAR */}
-        <aside className="w-80 border-l border-slate-800 flex flex-col bg-slate-900/50">
+        {/* RIGHT SIDEBAR - TELEMETRY */}
+        <aside className="w-80 border-l border-slate-800 flex flex-col bg-slate-900/80 backdrop-blur-sm z-20">
           <div className="p-4 border-b border-slate-800">
             <h2 className="text-xs font-bold tracking-[0.2em] text-slate-500 uppercase flex items-center gap-2">
               <Navigation2 size={14} className="text-emerald-400" />
@@ -288,11 +286,11 @@ const App: React.FC = () => {
 
           <div className="p-4 space-y-6 flex-1 overflow-y-auto">
             <div className="flex gap-4">
-               <div className="flex-1 bg-slate-800/20 border border-slate-800 p-3 rounded-sm text-center">
+               <div className="flex-1 bg-slate-800/50 border border-slate-800 p-3 rounded-sm text-center">
                   <div className="text-[10px] text-slate-500 uppercase mb-2">Battery</div>
                   <div className="text-2xl font-bold text-emerald-400">74%</div>
                </div>
-               <div className="flex-1 bg-slate-800/20 border border-slate-800 p-3 rounded-sm text-center">
+               <div className="flex-1 bg-slate-800/50 border border-slate-800 p-3 rounded-sm text-center">
                   <div className="text-[10px] text-slate-500 uppercase mb-2">Signal</div>
                   <div className="text-2xl font-bold text-cyan-400">92%</div>
                </div>
@@ -310,7 +308,7 @@ const App: React.FC = () => {
               </div>
 
               {rescuePlan ? (
-                <div className="bg-slate-800/40 border border-emerald-500/30 p-4 rounded-sm animate-in fade-in slide-in-from-right-4 duration-500">
+                <div className="bg-slate-800/60 border border-emerald-500/30 p-4 rounded-sm animate-in fade-in slide-in-from-right-4 duration-500">
                   <div className="text-xs font-bold text-emerald-400 mb-2 uppercase flex items-center gap-2">
                     <ShieldAlert size={14} /> AI Intel Report
                   </div>
@@ -327,7 +325,7 @@ const App: React.FC = () => {
                     </div>
                 </div>
               ) : (
-                <div className="bg-slate-800/10 border border-slate-800 border-dashed p-8 rounded-sm text-center flex flex-col items-center justify-center opacity-60">
+                <div className="bg-slate-800/20 border border-slate-800 border-dashed p-8 rounded-sm text-center flex flex-col items-center justify-center opacity-60">
                   <Cpu size={24} className="text-slate-700 mb-2" />
                   <p className="text-[10px] text-slate-600 uppercase tracking-wider">
                     Awaiting Sensor Input
