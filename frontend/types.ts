@@ -1,4 +1,3 @@
-
 export enum Priority {
   CRITICAL = 'CRITICAL',
   HIGH = 'HIGH',
@@ -17,6 +16,8 @@ export interface Detection {
     lat: number;
     lng: number;
   };
+  // NEW: Stores the Blob URL of the uploaded file so we can view it again later
+  mediaUrl?: string; 
 }
 
 export interface RescuePlan {

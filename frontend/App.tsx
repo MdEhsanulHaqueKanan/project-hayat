@@ -2,16 +2,15 @@ import React, { useState, useRef } from 'react';
 import axios from 'axios';
 import { 
   ShieldAlert, 
-  Wifi, 
-  Crosshair, 
-  Zap, 
   Activity, 
   Navigation2,
   Cpu,
   RefreshCw,
   Loader2,
   Upload,
-  Mic
+  Mic,
+  Crosshair,
+  Zap
 } from 'lucide-react';
 import { MOCK_DETECTIONS, getIconForType } from './constants';
 import { Priority, Detection, RescuePlan } from './types';
@@ -25,6 +24,9 @@ const App: React.FC = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [rescuePlan, setRescuePlan] = useState<RescuePlan | null>(null);
   
+  // NEW: Track which specific detection is the target for routing/inspection
+  const [activeTarget, setActiveTarget] = useState<Detection | null>(null);
+
   // Media Preview States
   const [preview, setPreview] = useState<string | null>(null);
   const [mediaType, setMediaType] = useState<'image' | 'audio' | null>(null);
@@ -38,21 +40,24 @@ const App: React.FC = () => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       
-      // Determine type
+      // Create a persistent URL for the file so we can view it later
+      const objectUrl = URL.createObjectURL(file);
+      
+      // Determine type and set preview immediately
       if (file.type.startsWith('image/')) {
         setMediaType('image');
-        setPreview(URL.createObjectURL(file));
+        setPreview(objectUrl);
       } else if (file.type.startsWith('audio/')) {
         setMediaType('audio');
-        setPreview(null); // No visual preview for audio
+        setPreview(objectUrl); 
       }
 
-      runAIAnalysis(file);
+      runAIAnalysis(file, objectUrl);
     }
   };
 
   // 2. The Bridge (Router to Python Backend)
-  const runAIAnalysis = async (file: File) => {
+  const runAIAnalysis = async (file: File, objectUrl: string) => {
     setIsAnalyzing(true);
     const formData = new FormData();
     formData.append("file", file);
@@ -85,7 +90,8 @@ const App: React.FC = () => {
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           priority: data.prediction === 'DAMAGED' ? Priority.CRITICAL : Priority.LOW,
           confidence: parseFloat(data.confidence) / 100,
-          coordinates: { lat: 36.2023 + jitterLat, lng: 36.1601 + jitterLng }
+          coordinates: { lat: 36.2023 + jitterLat, lng: 36.1601 + jitterLng },
+          mediaUrl: objectUrl // SAVE MEMORY
         };
       } else if (data.type === 'AUDIO') {
         newDetection = {
@@ -95,12 +101,14 @@ const App: React.FC = () => {
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           priority: data.prediction === 'SCREAM' ? Priority.HIGH : Priority.LOW,
           confidence: parseFloat(data.confidence) / 100,
-          coordinates: { lat: 36.2025 + jitterLat, lng: 36.1605 + jitterLng }
+          coordinates: { lat: 36.2025 + jitterLat, lng: 36.1605 + jitterLng },
+          mediaUrl: objectUrl // SAVE MEMORY
         };
       }
 
       if (newDetection) {
         setDetections(prev => [newDetection!, ...prev]);
+        setActiveTarget(newDetection); // Auto-focus the map on the new item
       }
 
     } catch (error) {
@@ -115,7 +123,39 @@ const App: React.FC = () => {
     setIsGenerating(true);
     const plan = await generateRescuePlan(detections);
     setRescuePlan(plan);
+    
+    // If no target selected, select the first one
+    if (!activeTarget && detections.length > 0) {
+        setActiveTarget(detections[0]);
+    }
+
+    // UX FIX: Automatically clear the image/audio overlay so we can see the map route
+    setMediaType(null);
+    
     setIsGenerating(false);
+  };
+
+  // --- SEPARATE ACTIONS FOR BETTER UX ---
+
+  // Action A: Clicking the Sidebar (View Media + Route)
+  const handleSidebarClick = (det: Detection) => {
+    setActiveTarget(det);
+    if (det.mediaUrl) {
+        setPreview(det.mediaUrl);
+        if (det.type === 'Voice') setMediaType('audio');
+        else setMediaType('image');
+    }
+  };
+
+  // Action B: Clicking the Map Pin (Route ONLY)
+  const handleMapMarkerClick = (det: Detection) => {
+    setActiveTarget(det);
+    // We do NOT open the media here, so the user can just see the route line update.
+  };
+
+  // Action C: Clicking "Inspect" inside the Map Popup (Explicit View)
+  const handlePopupInspect = (det: Detection) => {
+     handleSidebarClick(det); // Reuse sidebar logic to open media
   };
 
   return (
@@ -136,12 +176,20 @@ const App: React.FC = () => {
             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-xs font-semibold text-emerald-400">LIVE OPS: TURKEY-SYRIA</span>
           </div>
+          
+          {/* NEW: PERSISTENT UPLOAD BUTTON */}
+          <button 
+            onClick={() => fileInputRef.current?.click()}
+            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-1.5 rounded-sm text-xs font-bold transition-all shadow-lg hover:shadow-emerald-500/20"
+          >
+            <Upload size={14} /> NEW SCAN
+          </button>
         </div>
       </header>
 
       <main className="flex-1 flex overflow-hidden">
         
-        {/* LEFT SIDEBAR - DETECTION FEED */}
+        {/* LEFT SIDEBAR - Uses handleSidebarClick (Shows Image) */}
         <aside className="w-80 border-r border-slate-800 flex flex-col bg-slate-900/80 backdrop-blur-sm z-20">
           <div className="p-4 border-b border-slate-800 flex items-center justify-between">
             <h2 className="text-xs font-bold tracking-[0.2em] text-slate-500 uppercase flex items-center gap-2">
@@ -155,8 +203,9 @@ const App: React.FC = () => {
             {detections.map((det) => (
               <div 
                 key={det.id} 
-                className={`group relative bg-slate-800/80 border p-3 rounded-sm transition-all overflow-hidden
-                  ${det.id === detections[0].id ? 'animate-in slide-in-from-left duration-500 border-l-4 border-l-emerald-500' : 'border-slate-800 hover:border-slate-600'}
+                onClick={() => handleSidebarClick(det)}
+                className={`group relative bg-slate-800/80 border p-3 rounded-sm transition-all overflow-hidden cursor-pointer hover:bg-slate-700 hover:border-slate-500
+                  ${det.id === activeTarget?.id ? 'border-emerald-500 bg-slate-800' : 'border-slate-800'}
                 `}
               >
                 <div className={`absolute top-0 left-0 w-1 h-full ${
@@ -193,16 +242,21 @@ const App: React.FC = () => {
           </div>
         </aside>
 
-        {/* --- CENTER SECTION: MAP & VISUALIZER --- */}
+        {/* --- CENTER SECTION --- */}
         <section className="flex-1 relative overflow-hidden flex flex-col items-center justify-center">
           
-          {/* 1. THE MAP (Background Layer) */}
-          <MapBackground detections={detections} />
+          {/* MAP LAYER - Uses handleMapMarkerClick (Route Only) */}
+          <MapBackground 
+            detections={detections} 
+            rescuePlan={rescuePlan} 
+            activeTarget={activeTarget} 
+            onMarkerClick={handleMapMarkerClick} 
+          />
 
-          {/* 2. GRID OVERLAY (Low opacity for texture) */}
+          {/* GRID OVERLAY */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:40px_40px] opacity-10 pointer-events-none z-0" />
 
-          {/* 3. MAIN INTERFACE (Floating above map) */}
+          {/* FLOATING INTERFACE */}
           <div className="relative w-full h-full flex items-center justify-center p-10 z-10 pointer-events-none">
             
             {/* VISUAL MODE - Floating Image */}
@@ -220,18 +274,23 @@ const App: React.FC = () => {
             )}
 
             {/* AUDIO MODE - Floating Visualizer */}
-            {mediaType === 'audio' && (
+            {mediaType === 'audio' && preview && (
               <div className="pointer-events-auto relative w-full h-full max-w-2xl border-2 border-cyan-500/30 rounded-lg overflow-hidden bg-slate-900/90 backdrop-blur-md flex flex-col items-center justify-center p-10 shadow-[0_0_50px_rgba(6,182,212,0.15)]">
                 <div className="w-32 h-32 rounded-full bg-cyan-500/10 flex items-center justify-center mb-6 animate-pulse">
                    <Mic size={48} className="text-cyan-400" />
                 </div>
                 <h2 className="text-xl font-bold text-cyan-400 tracking-widest mb-2">AUDIO SPECTRUM ANALYSIS</h2>
-                <p className="text-xs text-slate-500 uppercase tracking-widest">Processing Frequency Bands...</p>
+                <p className="text-xs text-slate-500 uppercase tracking-widest mb-6">Processing Frequency Bands...</p>
                 
-                <div className="mt-8 flex items-end gap-1 h-16">
+                <div className="mt-4 flex items-end gap-1 h-16 w-full justify-center">
                   {[...Array(20)].map((_, i) => (
                     <div key={i} className="w-2 bg-cyan-500/50 animate-[bounce_1s_infinite]" style={{ height: `${Math.random() * 100}%`, animationDelay: `${i * 0.05}s` }} />
                   ))}
+                </div>
+
+                {/* AUDIO PLAYER */}
+                <div className="mt-8 w-full">
+                    <audio controls src={preview} className="w-full" />
                 </div>
 
                 {/* Close Button */}
@@ -240,7 +299,7 @@ const App: React.FC = () => {
             )}
 
             {/* DEFAULT STATE: Floating Upload Button */}
-            {!mediaType && (
+            {!mediaType && !rescuePlan && (
               <div 
                 onClick={() => fileInputRef.current?.click()}
                 className="pointer-events-auto group cursor-pointer w-96 h-64 border-2 border-dashed border-slate-600/50 rounded-lg flex flex-col items-center justify-center bg-slate-900/80 backdrop-blur-md hover:bg-slate-800/90 hover:border-cyan-500/50 transition-all shadow-2xl hover:shadow-[0_0_30px_rgba(6,182,212,0.2)]"

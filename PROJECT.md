@@ -25,16 +25,24 @@
 **Objective:** Replace static grids with real-time satellite mapping for tactical routing.
 - [x] **Mapping Engine:** Integrated `react-leaflet` with "Dark Matter" tactical tiles (CartoDB).
 - [x] **Dynamic Pinning:** Automated plotting of AI detections (Red/Blue Pins) on real GPS coordinates.
-- [x] **Overlay System:** Created "Heads-Up Display" (HUD) overlay for floating data above the map.
+- [x] **Flight Paths:** Implemented "Green Line" generation for UAV logistics corridors.
 
 ---
 
 ## 🚀 Phase 4: "Ghost Protocol" (Deployment) (COMPLETED)
-**Objective:** Containerize the application for universal deployment.
-- [x] **Docker Engine:** Created `Dockerfile` for Python (Backend) and Node.js (Frontend).
-- [x] **Orchestration:** Configured `docker-compose.yml` to link services and networking.
-- [x] **Optimization:** Reduced container size from 32GB → ~3GB by switching to CPU-only PyTorch builds.
-- [x] **Ignore Rules:** Configured strict `.dockerignore` to prevent 5GB+ context uploads.
+**Objective:** Optimize for edge deployment in low-bandwidth disaster zones.
+- [x] **Docker Engine:** Containerized Python Backend and Node.js Frontend.
+- [x] **Orchestration:** Configured `docker-compose` for one-click launch.
+- [x] **Optimization:** Reduced container size (32GB → 3GB) via CPU-only PyTorch builds.
+
+---
+
+## 💎 Phase 5: Mission Control UX (COMPLETED)
+**Objective:** Refine the operator experience for high-stress environments.
+- [x] **Dynamic Re-routing:** Clicking map pins instantly recalculates the flight path to that specific target.
+- [x] **Interactive Inspection:** Clicking pins or sidebar cards retrieves the source media (Image/Audio) for verification.
+- [x] **Audio Player:** Integrated embedded player for reviewing distress signals.
+- [x] **Workflow:** Added persistent "New Scan" controls for rapid multi-target analysis.
 
 ---
 

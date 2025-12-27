@@ -54,7 +54,7 @@ In the chaos of the **2023 Kahramanmaraş Earthquake**, rescuers faced three cri
 | **Eye (Vision)** | **YOLOv8 Custom** | Structural Damage Detection. |
 | **Ear (Audio)** | **ResNet18 + Librosa** | Spectrogram Classification (Scream vs Noise). |
 | **Brain (API)** | **FastAPI (Python)** | Async inference engine serving <100ms predictions. |
-| **Face (UI)** | **React + Vite + Leaflet** | Low-latency "Command Center" dashboard. |
+| **Face (UI)** | **React + Vite + Leaflet** | Interactive Command Center with dynamic routing, media inspection, and audio playback. |
 | **Deployment** | **Docker Compose** | CPU-Optimized containers for edge deployment. |
 
 ---
@@ -92,6 +92,9 @@ This project serves as a technical proof-of-concept for:
 ---
 
 **Author:** 
+
 Md. Ehsanul Haque Kanan
+
 AI Engineer
+
 Dhaka, Bangladesh
