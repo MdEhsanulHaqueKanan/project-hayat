@@ -1,0 +1,11 @@
+# Ignore local environments
+venv/
+node_modules/
+__pycache__/
+.git/
+.vscode/
+.DS_Store
+
+# Ignore heavy data for the build context if not needed
+# (We kept the models because we need them to run)
+backend/data/

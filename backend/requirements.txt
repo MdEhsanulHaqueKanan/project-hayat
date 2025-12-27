@@ -1,6 +1,16 @@
+# CPU-Only PyTorch (Lightweight for Docker)
+--extra-index-url https://download.pytorch.org/whl/cpu
+torch
+torchvision
+torchaudio
+
+# Standard Libraries
 fastapi
 uvicorn
 python-multipart
 ultralytics
 pillow
 numpy
+librosa
+soundfile
+matplotlib

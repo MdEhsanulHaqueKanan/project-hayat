@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  # --- THE BRAIN ---
+  backend:
+    build: ./backend
+    container_name: hayat_backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # Map local folders to container so you can edit code live
+      - ./backend:/app
+      # Exclude heavy folders from mapping to prevent conflicts
+      - /app/venv
+      - /app/__pycache__
+    environment:
+      - USE_REAL_AI=True
+
+  # --- THE FACE ---
+  frontend:
+    build: ./frontend
+    container_name: hayat_frontend
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    depends_on:
+      - backend # Wait for backend to start
+    environment:
+      - VITE_API_URL=http://localhost:8000

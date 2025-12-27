@@ -1,0 +1,14 @@
+# Ignore Virtual Env
+venv/
+__pycache__/
+*.pyc
+.env
+
+# Ignore Heavy Data
+data/
+data_spectrograms/
+runs/
+
+# Ignore IDE files
+.vscode/
+.idea/
