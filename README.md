@@ -15,6 +15,12 @@
 
 ---
 
+![Tactical Routing Demo](./project_hayat_route.png)
+> *Tactical View: Automated generation of UAV flight corridors (Green) connecting base logistics to the disaster site.*
+
+---
+
+
 ## 🚨 The Mission
 **Project Hayat** is a Rapid Response Command & Control (C2) platform designed to win the "Golden Hour" following catastrophic seismic events. 
 
