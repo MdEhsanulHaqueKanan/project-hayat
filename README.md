@@ -1,18 +1,17 @@
 # Project Hayat (مشروع حياة)
 ### AI-Augmented Urban Search & Rescue (USAR) Intelligence Platform
 
-![Status](https://img.shields.io/badge/Status-Prototype_v1.0-emerald?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Field_Ready_v2.0-emerald?style=for-the-badge)
 ![Focus](https://img.shields.io/badge/Focus-Humanitarian_Defense-blue?style=for-the-badge)
-![Tech](https://img.shields.io/badge/Stack-YOLOv8_|_FastAPI_|_React-slate?style=for-the-badge)
+![Stack](https://img.shields.io/badge/Stack-YOLOv8_|_ResNet18_|_Docker-slate?style=for-the-badge)
 
 > *"And whoever saves one [life] - it is as if he had saved mankind entirely."* (Quran 5:32)
 
 ---
 
-
-## 📸 Interface Preview
+## 📸 Mission Control Dashboard
 ![Project Hayat Dashboard](./project_hayat.png)
-> *The Dashboard displays live telemetry, real-time detection logs, and an automated rescue strategy generator.*
+> *Live view: Multimodal sensor fusion detecting structural collapse (Red) and human distress signals (Cyan) on a tactical map.*
 
 ---
 
@@ -21,26 +20,29 @@
 
 In the chaos of the **2023 Kahramanmaraş Earthquake**, rescuers faced three critical "Blind Spots":
 1.  **Visual Blindness:** Inability to distinguish between "damaged" and "collapsed" structures from altitude.
-2.  **Logistical Deadlock:** Aid convoys routing through destroyed roads because standard GPS data was outdated.
-3.  **Signal Noise:** Difficulty isolating human cries for help from machinery noise.
+2.  **Signal Noise:** Difficulty isolating faint human cries for help from heavy machinery noise.
+3.  **Logistical Deadlock:** Aid convoys routing through destroyed roads due to outdated maps.
 
-**Hayat** solves this by fusing **Computer Vision (Satellite/Drone)** and **Signal Processing** into a unified Tactical Dashboard.
+**Hayat** solves this by fusing **Computer Vision**, **Deep Audio Filtering**, and **Geospatial Intelligence** into a unified tactical dashboard.
 
 ---
 
-## ⚡ Core Capabilities (MVP v1.0)
+## ⚡ Core Capabilities (v2.0)
 
-### 1. "Eagle Eye" - Semantic Damage Assessment
+### 1. "Eagle Eye" - Visual Damage Assessment
 *   **Tech:** Ultralytics YOLOv8 (Fine-tuned on Turkey 2023 Earthquake Dataset).
-*   **Function:** Analysis of post-disaster drone imagery to classify structural integrity.
-*   **Output:** Real-time semantic segmentation of:
-    *   🔴 **CRITICAL FAILURE:** Collapsed/Pancaked structures (Priority SAR Zones).
-    *   🟢 **STRUCTURAL INTEGRITY:** Standing structures safe for logistics routing.
+*   **Function:** Real-time drone imagery analysis.
+*   **Output:** Detects and flags **CRITICAL FAILURE** (Pancaked structures) vs **STRUCTURAL INTEGRITY** (Safe zones).
 
-### 2. Tactical Intelligence Engine
-*   **Tech:** Rule-Based Expert System (TypeScript).
-*   **Function:** Generates military-grade Situation Reports (SITREPs) based on visual data.
-*   **Output:** Automated routing advice (e.g., *"Sector 4 compromised. Re-route Convoy Alpha via Northern Access Road."*).
+### 2. "The Listener" - Bio-Signal Extraction
+*   **Tech:** ResNet18 trained on Mel-Spectrograms (Librosa).
+*   **Function:** Filters drone propeller noise to detect specific frequency signatures of **Human Screams/Distress**.
+*   **Output:** Generates "Cyan Alerts" for biological presence even in low-visibility conditions.
+
+### 3. "The Navigator" - Tactical Mapping
+*   **Tech:** Leaflet / CartoDB Dark Matter.
+*   **Function:** Dynamic plotting of AI detections on a live satellite grid.
+*   **Output:** Auto-generates safe logistics routes avoiding "Red Zones" (Collapsed buildings).
 
 ---
 
@@ -49,32 +51,45 @@ In the chaos of the **2023 Kahramanmaraş Earthquake**, rescuers faced three cri
 ### The "Triad" Stack
 | Component | Technology | Role |
 | :--- | :--- | :--- |
-| **Eye (Vision)** | **YOLOv8 Custom** | Fine-tuned on xView2/Turkey data for rubble detection. |
+| **Eye (Vision)** | **YOLOv8 Custom** | Structural Damage Detection. |
+| **Ear (Audio)** | **ResNet18 + Librosa** | Spectrogram Classification (Scream vs Noise). |
 | **Brain (API)** | **FastAPI (Python)** | Async inference engine serving <100ms predictions. |
-| **Face (UI)** | **React + Vite** | Low-latency "Command Center" dashboard with Tailwind CSS. |
+| **Face (UI)** | **React + Vite + Leaflet** | Low-latency "Command Center" dashboard. |
+| **Deployment** | **Docker Compose** | CPU-Optimized containers for edge deployment. |
 
 ---
 
-## 🚀 Deployment Strategy
-This project is designed for "Dual-Use" application:
-1.  **Humanitarian:** Deployed by AFAD (Turkey) or KSrelief (KSA) for disaster response.
-2.  **Resilience:** Used by NEOM (The Line) for smart-city structural health monitoring.
+## 🚀 Deployment (Ghost Protocol)
 
-## 📦 Installation (Local Dev)
+Project Hayat is containerized for instant deployment on local hardware or cloud servers.
 
-**Backend:**
+### Prerequisite
+*   Docker Desktop installed.
+
+### Quick Start
 ```bash
-cd backend
-pip install -r requirements.txt
-uvicorn main:app --reload
+# 1. Clone the repo
+git clone https://github.com/MdEhsanulHaqueKanan/project-hayat.git
+cd project-hayat
+
+# 2. Launch the System (Builds optimized CPU containers)
+docker-compose up --build
 ```
 
-**Frontend:**
-```bash
-cd frontend
-npm install
-npm run dev
-```
+*   **Frontend:** http://localhost:3000
+*   **Backend:** http://localhost:8000/docs
+
+---
+
+## 🤝 Project Legacy & Impact
+> *"Intercepting Time to Save Lives."*
+
+This project serves as a technical proof-of-concept for:
+1.  **AFAD (Turkey):** Automated damage assessment.
+2.  **KSrelief (KSA):** Smart humanitarian logistics.
+3.  **NEOM (Saudi Arabia):** Cognitive city resilience systems.
+
+---
 
 **Author:** 
 Md. Ehsanul Haque Kanan
