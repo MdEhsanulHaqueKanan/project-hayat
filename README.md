@@ -91,6 +91,17 @@ This project serves as a technical proof-of-concept for:
 
 ---
 
+## 🔮 Future Roadmap (v3.0 Objectives)
+This project is currently in **Phase 2 (Rapid Sector Assessment)**. The next phase of development focuses on granular object tracking for active drone feeds.
+
+### Planned Features:
+*   **Video Object Detection:** Upgrade `YOLOv8-cls` to `YOLOv8-det` to draw real-time bounding boxes around specific rubble pockets.
+*   **Live Stream Support:** Integration with RTSP/WebRTC protocols for live DJI drone telemetry (vs. file upload).
+*   **Edge Optimization:** Quantization of models to `INT8` for deployment on NVIDIA Jetson Orin Nano (Low power consumption).
+*   **Offline Mapping:** Caching vector tiles for operation in zero-connectivity zones.
+
+---
+
 **Author:** 
 
 Md. Ehsanul Haque Kanan
