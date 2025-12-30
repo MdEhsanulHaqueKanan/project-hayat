@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { MOCK_DETECTIONS, getIconForType } from './constants';
 import { Priority, Detection, RescuePlan } from './types';
-import { generateRescuePlan } from './services/geminiService';
+import { generateRescuePlan } from './services/tacticalService';
 import { MapBackground } from './MapBackground';
 
 const App: React.FC = () => {
