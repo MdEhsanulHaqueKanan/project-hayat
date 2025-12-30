@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { Detection, Priority, RescuePlan } from './types';
 
-// --- INLINE SVG ICONS (Zero Dependencies) ---
+// Custom SVG Icon Generator to avoid external asset dependencies
 const createIcon = (color: string) => {
     return L.divIcon({
         className: 'custom-pin',
@@ -14,44 +14,43 @@ const createIcon = (color: string) => {
               <circle cx="12" cy="10" r="3" fill="#1e293b"></circle>
             </svg>
         `,
-        iconSize: [36, 36],   // Size of the pin
-        iconAnchor: [18, 36], // Point of the pin (Bottom Center)
-        popupAnchor: [0, -36] // Where the popup opens
+        iconSize: [36, 36],   
+        iconAnchor: [18, 36], 
+        popupAnchor: [0, -36] 
     });
 };
 
-const redIcon = createIcon('#ef4444');   // Red-500
-const blueIcon = createIcon('#06b6d4');  // Cyan-500
-const greenIcon = createIcon('#10b981'); // Emerald-500
+const redIcon = createIcon('#ef4444');   // High Priority
+const blueIcon = createIcon('#06b6d4');  // Bio/Audio Signal
+const greenIcon = createIcon('#10b981'); // Base Station
 
-// --- COMPONENT: Map Updater ---
+// Helper component to programmatically animate map view changes
 const MapUpdater = ({ center }: { center: [number, number] }) => {
     const map = useMap();
     useEffect(() => {
-        map.flyTo(center, 15, { duration: 2.0 }); // Smoothly fly to new target
+        map.flyTo(center, 15, { duration: 2.0 });
     }, [center, map]);
     return null;
 };
 
-// --- INTERFACE ---
 interface MapProps {
     detections: Detection[];
     rescuePlan: RescuePlan | null;
-    activeTarget: Detection | null; // NEW: The specific pin selected by user for routing
+    activeTarget: Detection | null;
     onMarkerClick: (det: Detection) => void;
 }
 
 export const MapBackground: React.FC<MapProps> = ({ detections, rescuePlan, activeTarget, onMarkerClick }) => {
-    const defaultCenter: [number, number] = [36.2023, 36.1601];
+    const defaultCenter: [number, number] = [36.2023, 36.1601]; // Antakya Coordinates
     
-    // LOGIC: Use the User Selected target, otherwise default to the latest one
+    // Prioritize user-selected target, fallback to most recent detection
     const targetDetection = activeTarget || (detections.length > 0 ? detections[0] : null);
     
     const activeCenter = targetDetection 
         ? [targetDetection.coordinates.lat, targetDetection.coordinates.lng] as [number, number]
         : defaultCenter;
 
-    // Base Station offset (Calculated relative to target for visual clarity)
+    // Simulate a base station location relative to the target for visualization
     const baseStationCoords: [number, number] = targetDetection 
         ? [targetDetection.coordinates.lat + 0.004, targetDetection.coordinates.lng - 0.006] 
         : [36.2063, 36.1541];
@@ -67,7 +66,7 @@ export const MapBackground: React.FC<MapProps> = ({ detections, rescuePlan, acti
                 zoomControl={false} 
                 scrollWheelZoom={true}
             >
-                {/* DARK MODE TILES */}
+                {/* CartoDB Dark Matter Tiles */}
                 <TileLayer
                     attribution='&copy; <a href="https://carto.com/attributions">CARTO</a>'
                     url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
@@ -75,7 +74,7 @@ export const MapBackground: React.FC<MapProps> = ({ detections, rescuePlan, acti
                 
                 <MapUpdater center={activeCenter} />
 
-                {/* Draw Route to the CURRENT TARGET */}
+                {/* Render Flight Path & Base Station if Routing is Active */}
                 {rescuePlan && targetDetection && (
                     <>
                         <Polyline 
@@ -91,7 +90,7 @@ export const MapBackground: React.FC<MapProps> = ({ detections, rescuePlan, acti
                     </>
                 )}
 
-                {/* Draw All Detections */}
+                {/* Render Sensor Detections */}
                 {detections.map((det) => (
                     <Marker 
                         key={det.id} 
@@ -114,6 +113,7 @@ export const MapBackground: React.FC<MapProps> = ({ detections, rescuePlan, acti
                 ))}
             </MapContainer>
             
+            {/* Vignette Overlay for Tactical UI Effect */}
             <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,transparent_0%,rgba(2,6,23,0.8)_100%)] z-[400]" />
         </div>
     );

@@ -11,17 +11,18 @@ import librosa
 import numpy as np
 import matplotlib.pyplot as plt
 
-app = FastAPI(title="Project Hayat API (Multimodal)")
+# Initialize API
+app = FastAPI(
+    title="Project Hayat API",
+    description="Multimodal Intelligence Platform for Urban Search & Rescue",
+    version="2.0"
+)
 
-# ---------------------------------------------------------
-# CONFIG
-# ---------------------------------------------------------
+# --- CONFIGURATION ---
 USE_REAL_AI = True
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# ---------------------------------------------------------
-# CORS
-# ---------------------------------------------------------
+# --- MIDDLEWARE ---
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,58 +31,56 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ---------------------------------------------------------
-# LOAD AI MODELS
-# ---------------------------------------------------------
+# --- MODEL INITIALIZATION ---
 vision_model = None
 audio_model = None
 
 if USE_REAL_AI:
-    print(f"🚀 Loading AI Models on {DEVICE}...")
+    print(f"🚀 Initializing AI Models on {DEVICE}...")
 
-    # 1. LOAD VISION MODEL (YOLO)
+    # Vision Model (YOLOv8)
     vision_path = "models/hayat_v1.pt"
     if os.path.exists(vision_path):
         try:
             vision_model = YOLO(vision_path)
-            print("✅ Vision Model (Eagle Eye) Loaded!")
+            print(f"✅ Vision Model Loaded: {vision_path}")
         except Exception as e:
             print(f"❌ Vision Init Failed: {e}")
     
-    # 2. LOAD AUDIO MODEL (ResNet18)
+    # Audio Model (ResNet18)
     audio_path = "models/audio_v1.pt"
     if os.path.exists(audio_path):
         try:
-            # We must recreate the architecture exactly as we trained it
             audio_model = models.resnet18(pretrained=False)
             num_ftrs = audio_model.fc.in_features
-            audio_model.fc = nn.Linear(num_ftrs, 2) # Binary Class
+            audio_model.fc = nn.Linear(num_ftrs, 2)
             
-            # Load weights
             state_dict = torch.load(audio_path, map_location=DEVICE)
             audio_model.load_state_dict(state_dict)
             audio_model.to(DEVICE)
-            audio_model.eval() # Set to evaluation mode
-            print("✅ Audio Model (The Listener) Loaded!")
+            audio_model.eval()
+            print(f"✅ Audio Model Loaded: {audio_path}")
         except Exception as e:
             print(f"❌ Audio Init Failed: {e}")
 
-# ---------------------------------------------------------
-# HELPER: Audio -> Spectrogram -> Tensor
-# ---------------------------------------------------------
+# --- UTILITIES ---
+
 def process_audio_file(audio_bytes):
-    # 1. Load audio from bytes
+    """
+    Converts raw audio bytes into a Mel-Spectrogram tensor compatible with ResNet18.
+    Applies padding to ensure consistent input size (3s duration).
+    """
     y, sr = librosa.load(io.BytesIO(audio_bytes), sr=22050, duration=3)
     
-    # Pad if too short
+    # Pad input if shorter than 3 seconds
     if len(y) < 22050 * 3:
         y = np.pad(y, (0, 22050 * 3 - len(y)))
         
-    # 2. Generate Spectrogram
+    # Generate Mel Spectrogram
     S = librosa.feature.melspectrogram(y=y, sr=sr, n_mels=128)
     S_dB = librosa.power_to_db(S, ref=np.max)
     
-    # 3. Save to buffer as Image (Greyscale to RGB)
+    # Render to buffer as greyscale image
     plt.figure(figsize=(2.24, 2.24))
     librosa.display.specshow(S_dB, sr=sr)
     plt.axis('off')
@@ -91,7 +90,7 @@ def process_audio_file(audio_bytes):
     plt.close()
     buf.seek(0)
     
-    # 4. Transform for PyTorch
+    # Transform for PyTorch Inference
     image = Image.open(buf).convert('RGB')
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -100,19 +99,24 @@ def process_audio_file(audio_bytes):
     ])
     return transform(image).unsqueeze(0).to(DEVICE)
 
-# ---------------------------------------------------------
-# ENDPOINTS
-# ---------------------------------------------------------
+# --- ENDPOINTS ---
 
 @app.get("/")
 def read_root():
-    return {"status": "System Operational", "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU"}
+    """Health check endpoint."""
+    return {
+        "status": "System Operational", 
+        "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else "CPU"
+    }
 
 @app.post("/analyze/image")
 async def analyze_image(file: UploadFile = File(...)):
-    """ EAGLE EYE: Detects Building Damage """
+    """
+    Analyzes drone imagery for structural damage (collapsed vs standing).
+    Returns class prediction and confidence score.
+    """
     if not vision_model:
-        return {"error": "Vision AI not loaded"}
+        raise HTTPException(status_code=503, detail="Vision AI model not loaded")
     
     contents = await file.read()
     image = Image.open(io.BytesIO(contents))
@@ -130,16 +134,17 @@ async def analyze_image(file: UploadFile = File(...)):
 
 @app.post("/analyze/audio")
 async def analyze_audio(file: UploadFile = File(...)):
-    """ THE LISTENER: Detects Human Screams """
+    """
+    Analyzes audio stream for biological distress signals (human screams).
+    Filters background machinery/drone noise.
+    """
     if not audio_model:
-        return {"error": "Audio AI not loaded"}
+        raise HTTPException(status_code=503, detail="Audio AI model not loaded")
     
     try:
-        # Process Audio
         contents = await file.read()
         input_tensor = process_audio_file(contents)
         
-        # Run Inference
         with torch.no_grad():
             outputs = audio_model(input_tensor)
             probabilities = torch.nn.functional.softmax(outputs, dim=1)
@@ -156,5 +161,5 @@ async def analyze_audio(file: UploadFile = File(...)):
         }
         
     except Exception as e:
-        print(f"Audio Error: {e}")
+        print(f"Audio Processing Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

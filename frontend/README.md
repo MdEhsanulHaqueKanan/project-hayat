@@ -1,20 +1,31 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Project Hayat - Tactical Dashboard (Frontend)
 
-# Run and deploy your AI Studio app
+This directory contains the user interface logic for **Project Hayat**. It is a high-performance React application designed for low-latency rendering of geospatial data and sensor telemetry.
 
-This contains everything you need to run your app locally.
+## 🛠️ Tech Stack
+*   **Core:** React 18 + Vite (for sub-millisecond HMR).
+*   **Styling:** Tailwind CSS (Dark mode tactical theme).
+*   **Mapping:** Leaflet + React-Leaflet (CartoDB Dark Matter tiles).
+*   **Icons:** Lucide-React + Dynamic SVG generation.
+*   **State:** Local React State (optimized for real-time updates).
 
-View your app in AI Studio: https://ai.studio/apps/drive/1a8kvd5TxPmJaeC2P-GKIKoOjdad0vC7Y
+## 📂 Key Architecture
+*   **`App.tsx`**: Main controller. Handles state lifting between the Sidebar, Map, and Media Overlays. Manages the connection to the Python Backend.
+*   **`MapBackground.tsx`**: A specialized Map component that handles:
+    *   Dynamic route generation (Green Polylines).
+    *   Custom SVG Pin rendering (Red/Blue/Green indicators).
+    *   Automatic camera fly-to animations.
+*   **`types.ts`**: Strict TypeScript definitions for Sensor Data and Rescue Plans to ensure type safety.
 
-## Run Locally
+## 🚀 Local Development setup
 
-**Prerequisites:**  Node.js
+If you are running the frontend independently (outside of Docker), follow these steps:
 
+### 1. Prerequisites
+*   Node.js (v18 or higher)
+*   npm
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### 2. Installation
+```bash
+cd frontend
+npm install

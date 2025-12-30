@@ -288,7 +288,7 @@ const App: React.FC = () => {
                   ))}
                 </div>
 
-                {/* AUDIO PLAYER */}
+                {/* NEW: AUDIO PLAYER (No autoPlay) */}
                 <div className="mt-8 w-full">
                     <audio controls src={preview} className="w-full" />
                 </div>
